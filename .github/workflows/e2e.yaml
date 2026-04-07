@@ -1,0 +1,72 @@
+name: E2E Test
+on:
+  repository_dispatch:
+    types: [pubm-release]
+  workflow_dispatch:
+    inputs:
+      pubm_version:
+        description: "pubm version to test"
+        default: "latest"
+
+permissions:
+  contents: write
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun add pubm@${{ inputs.pubm_version || github.event.client_payload.pubm_version || 'latest' }} @pubm/core@${{ inputs.pubm_version || github.event.client_payload.pubm_version || 'latest' }}
+
+      - name: Configure git
+        run: |
+          git config user.name "pubm-bot"
+          git config user.email "bot@pubm.dev"
+
+      - name: Create changeset
+        run: |
+          TIMESTAMP=$(date +%Y%m%d%H%M%S)
+          mkdir -p .pubm/changesets
+          cat > .pubm/changesets/e2e-${TIMESTAMP}.md << CHANGESET
+          ---
+          "@pubm-test/changesets-core": patch
+          "@pubm-test/changesets-utils": patch
+          ---
+
+          E2E test bump ${TIMESTAMP}
+          CHANGESET
+
+      - name: Version (consume changeset)
+        run: bunx pubm --mode ci --phase prepare --any-branch --no-tests --no-build
+
+      - name: Read new version
+        run: |
+          VERSION=$(node -e "console.log(JSON.parse(require('fs').readFileSync('packages/core/package.json', 'utf8')).version)")
+          echo "VERSION=${VERSION}" >> $GITHUB_ENV
+          echo "New version: ${VERSION}"
+
+      - name: Commit and push version bump
+        run: |
+          git add -A
+          git commit -m "chore: version bump (e2e)"
+          git push origin main
+
+      - name: Publish
+        run: bunx pubm --mode ci --phase publish --any-branch
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Verify deployment
+        run: |
+          sleep 10
+          npm view @pubm-test/changesets-core@${{ env.VERSION }}
+          npm view @pubm-test/changesets-utils@${{ env.VERSION }}

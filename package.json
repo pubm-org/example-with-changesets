@@ -1,0 +1,5 @@
+{
+  "name": "example-with-changesets",
+  "private": true,
+  "workspaces": ["packages/*"]
+}
