@@ -1,5 +1,9 @@
 {
   "name": "example-with-changesets",
   "private": true,
-  "workspaces": ["packages/*"]
+  "workspaces": ["packages/*"],
+  "dependencies": {
+    "@pubm/core": "^0.5.2",
+    "pubm": "^0.5.2"
+  }
 }
