@@ -10,6 +10,7 @@ on:
 
 permissions:
   contents: write
+  id-token: write
 
 jobs:
   e2e:
@@ -26,6 +27,13 @@ jobs:
 
       - name: Install dependencies
         run: bun add pubm@${{ inputs.pubm_version || github.event.client_payload.pubm_version || 'latest' }} @pubm/core@${{ inputs.pubm_version || github.event.client_payload.pubm_version || 'latest' }}
+
+      - name: Setup npm auth
+        run: |
+          echo "//registry.npmjs.org/:_authToken=${NODE_AUTH_TOKEN}" > .npmrc
+          echo "access=public" >> .npmrc
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Configure git
         run: |
@@ -61,12 +69,12 @@ jobs:
           git push origin main
 
       - name: Publish
-        run: bunx pubm --mode ci --phase publish --any-branch
+        run: bunx pubm --mode ci --phase publish --any-branch --skip-release
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Verify deployment
         run: |
-          sleep 10
+          sleep 30
           npm view @pubm-test/changesets-core@${{ env.VERSION }}
           npm view @pubm-test/changesets-utils@${{ env.VERSION }}
