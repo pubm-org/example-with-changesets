@@ -33,6 +33,7 @@ jobs:
           echo "//registry.npmjs.org/:_authToken=${NODE_AUTH_TOKEN}" > .npmrc
           echo "access=public" >> .npmrc
         env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Configure git
         run: |
@@ -43,18 +44,17 @@ jobs:
         run: |
           TIMESTAMP=$(date +%Y%m%d%H%M%S)
           mkdir -p .pubm/changesets
-          cat > .pubm/changesets/e2e-${TIMESTAMP}.md << CHANGESET
+          cat > .pubm/changesets/e2e-${TIMESTAMP}.md << EOF
           ---
           "@pubm-test/changesets-core": patch
           "@pubm-test/changesets-utils": patch
           ---
 
           E2E test bump ${TIMESTAMP}
-          CHANGESET
+          EOF
 
       - name: Version (consume changeset)
         run: bunx pubm version
-        env:
 
       - name: Read new version
         run: |
@@ -71,6 +71,7 @@ jobs:
       - name: Publish
         run: bunx pubm --mode ci --phase publish --any-branch --skip-release
         env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Verify deployment
         run: |
