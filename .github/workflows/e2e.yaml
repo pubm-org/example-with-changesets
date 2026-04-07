@@ -55,6 +55,8 @@ jobs:
 
       - name: Version (consume changeset)
         run: bunx pubm --mode ci --phase prepare --any-branch --no-tests --no-build
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Read new version
         run: |
@@ -65,7 +67,7 @@ jobs:
       - name: Commit and push version bump
         run: |
           git add -A
-          git commit -m "chore: version bump (e2e)"
+          git commit -m "chore: version bump (e2e)" || echo "Nothing to commit"
           git push origin main
 
       - name: Publish
