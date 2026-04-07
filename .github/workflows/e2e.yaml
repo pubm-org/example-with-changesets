@@ -33,7 +33,6 @@ jobs:
           echo "//registry.npmjs.org/:_authToken=${NODE_AUTH_TOKEN}" > .npmrc
           echo "access=public" >> .npmrc
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Configure git
         run: |
@@ -54,9 +53,8 @@ jobs:
           CHANGESET
 
       - name: Version (consume changeset)
-        run: bunx pubm --mode ci --phase prepare --any-branch --no-tests --no-build
+        run: bunx pubm version
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Read new version
         run: |
@@ -73,7 +71,6 @@ jobs:
       - name: Publish
         run: bunx pubm --mode ci --phase publish --any-branch --skip-release
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Verify deployment
         run: |
